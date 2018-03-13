@@ -1,15 +1,20 @@
 #!/usr/bin/env python
 
+from glob import glob
 import os
+from zipfile import ZipFile
 
 from agate import csv
+import xlrd
 
 
 TEXAS_STATE_FIPS = '48'
 SMITH_COUNTY_FIPS = '423'
-FORMAT3_DIR = 'data/format3'
-OUTPUT_PATH = 'output/all_years.csv'
 
+FORMAT2_DIR = 'data/format2'
+FORMAT3_DIR = 'data/format3'
+
+OUTPUT_PATH = 'output/all_years.csv'
 OUTPUT_FIELDNAMES = [
     'year',
     'in_state_fips',
@@ -25,8 +30,11 @@ OUTPUT_FIELDNAMES = [
 def main():
     output = []
 
-    for filename in os.listdir(FORMAT3_DIR):
-        output.extend(parse_format3(filename))
+    for path in glob('{}/*.zip'.format(FORMAT2_DIR)):
+        output.extend(parse_format2(path))
+
+    for path in glob('{}/*.csv'.format(FORMAT3_DIR)):
+        output.extend(parse_format3(path))
 
     output = sorted(output, key=lambda row: (row['year'], row['in_state_fips'], row['in_county_fips']))
 
@@ -36,9 +44,60 @@ def main():
         writer.writerows(output)
 
 
-def parse_format3(filename):
-    path = os.path.join(FORMAT3_DIR, filename)
-    year = '20{}'.format(filename[-6:-4])
+def parse_format2(path):
+    year = '20{}'.format(path[-6:-4])
+
+    print('Parsing', year)
+
+    output = []
+
+    archive = ZipFile(path, 'r')
+
+    slug = path[-8:-4]
+
+    filename_formats = [
+        'co{}iTx.xls'.format(slug),
+        'co{}TXi.xls'.format(slug),
+        'co{}Txi.xls'.format(slug),
+        'co{}iTX.xls'.format(slug),
+        'co{}itx.xls'.format(slug)
+    ]
+
+    archive_filename = None
+
+    for filename in filename_formats:
+        if filename in archive.namelist():
+            archive_filename = filename
+
+    with archive.open(archive_filename, 'r') as f:
+        book = xlrd.open_workbook(file_contents=f.read())
+
+        sheet = book.sheet_by_index(0)
+
+        columns = []
+
+        for i in range(sheet.ncols):
+            columns.append(sheet.col_values(i)[8:])
+
+        output = []
+
+        for row in zip(*columns):
+            output.append({
+                'year': year,
+                'in_state_fips': str(row[2]),
+                'in_county_fips': str(row[3]),
+                'in_state': row[4],
+                'in_county': row[5],
+                'returns': str(row[6]),
+                'exemptions': str(row[7]),
+                'agi': str(row[8])
+            })
+
+    return output
+
+
+def parse_format3(path):
+    year = '20{}'.format(path[-6:-4])
 
     print('Parsing', year)
 
@@ -51,8 +110,8 @@ def parse_format3(filename):
             if row['y2_statefips'] == TEXAS_STATE_FIPS and row['y2_countyfips'] == SMITH_COUNTY_FIPS:
                 output.append({
                     'year': year,
-                    'in_state_fips': row['y1_statefips'],
-                    'in_county_fips': row['y1_countyfips'],
+                    'in_state_fips': int(row['y1_statefips']),
+                    'in_county_fips': int(row['y1_countyfips']),
                     'in_state': row['y1_state'],
                     'in_county': row['y1_countyname'],
                     'returns': row['n1'],
@@ -61,9 +120,6 @@ def parse_format3(filename):
                 })
 
     return output
-
-
-
 
 
 if __name__ == '__main__':
