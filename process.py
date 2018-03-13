@@ -28,6 +28,8 @@ def main():
     for filename in os.listdir(FORMAT3_DIR):
         output.extend(parse_format3(filename))
 
+    output = sorted(output, key=lambda row: (row['year'], row['in_state_fips'], row['in_county_fips']))
+
     with open(OUTPUT_PATH, 'w') as f:
         writer = csv.DictWriter(f, fieldnames=OUTPUT_FIELDNAMES)
         writer.writeheader()
