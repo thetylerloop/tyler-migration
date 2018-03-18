@@ -23,8 +23,20 @@ OUTPUT_FIELDNAMES = [
     'year1_county',
     'returns',
     'exemptions',
-    'agi'
+    'agi_thousands'
 ]
+
+COUNTY_NORMALIZATION = {
+    'Smith County Tot Mig-Diff S': 'Smith County Total Migration-Different State',
+    'Smith County Tot Mig-Diff St': 'Smith County Total Migration-Different State',
+    'Smith County Tot Mig-Foreig': 'Smith County Total Migration-Foreign',
+    'Smith County Tot Mig-Foreign': 'Smith County Total Migration-Foreign',
+    'Smith County Tot Mig-Same S': 'Smith County Total Migration-Same State',
+    'Smith County Tot Mig-Same St': 'Smith County Total Migration-Same State',
+    'Smith County Tot Mig-US': 'Smith County Total Migration-US',
+    'Smith County Tot Mig-US & F': 'Smith County Total Migration-US and Foreign',
+    'Smith County Tot Mig-US & For': 'Smith County Total Migration-US and Foreign'
+}
 
 
 def main():
@@ -42,8 +54,6 @@ def main():
         writer = csv.DictWriter(f, fieldnames=OUTPUT_FIELDNAMES)
         writer.writeheader()
         writer.writerows(output)
-
-    
 
 
 def parse_format2(path):
@@ -84,16 +94,17 @@ def parse_format2(path):
         output = []
 
         for row in zip(*columns):
-            output.append({
-                'year2': year,
-                'year1_state_fips': str(row[2]),
-                'year1_county_fips': str(row[3]),
-                'year1_state': row[4],
-                'year1_county': row[5],
-                'returns': str(row[6]),
-                'exemptions': str(row[7]),
-                'agi': str(row[8])
-            })
+            if str(row[0]) == TEXAS_STATE_FIPS and str(row[1]) == SMITH_COUNTY_FIPS:
+                output.append({
+                    'year2': year,
+                    'year1_state_fips': str(row[2]),
+                    'year1_county_fips': str(row[3]),
+                    'year1_state': row[4],
+                    'year1_county': COUNTY_NORMALIZATION.get(row[5], row[5]),
+                    'returns': str(row[6]),
+                    'exemptions': str(row[7]),
+                    'agi_thousands': str(row[8])
+                })
 
     return output
 
@@ -115,10 +126,10 @@ def parse_format3(path):
                     'year1_state_fips': int(row['y1_statefips']),
                     'year1_county_fips': int(row['y1_countyfips']),
                     'year1_state': row['y1_state'],
-                    'year1_county': row['y1_countyname'],
+                    'year1_county': COUNTY_NORMALIZATION.get(row['y1_countyname'], row['y1_countyname']),
                     'returns': row['n1'],
                     'exemptions': row['n2'],
-                    'agi': row['agi']
+                    'agi_thousands': row['agi']
                 })
 
     return output
