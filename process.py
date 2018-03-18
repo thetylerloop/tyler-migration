@@ -16,11 +16,11 @@ FORMAT3_DIR = 'data/format3'
 
 OUTPUT_PATH = 'output/all_years.csv'
 OUTPUT_FIELDNAMES = [
-    'year',
-    'in_state_fips',
-    'in_county_fips',
-    'in_state',
-    'in_county',
+    'year2',
+    'year1_state_fips',
+    'year1_county_fips',
+    'year1_state',
+    'year1_county',
     'returns',
     'exemptions',
     'agi'
@@ -30,18 +30,20 @@ OUTPUT_FIELDNAMES = [
 def main():
     output = []
 
-    for path in glob('{}/*.zip'.format(FORMAT2_DIR)):
+    for path in sorted(glob('{}/*.zip'.format(FORMAT2_DIR))):
         output.extend(parse_format2(path))
 
-    for path in glob('{}/*.csv'.format(FORMAT3_DIR)):
+    for path in sorted(glob('{}/*.csv'.format(FORMAT3_DIR))):
         output.extend(parse_format3(path))
 
-    output = sorted(output, key=lambda row: (row['year'], row['in_state_fips'], row['in_county_fips']))
+    output = sorted(output, key=lambda row: (row['year2'], row['year1_state_fips'], row['year1_county_fips']))
 
     with open(OUTPUT_PATH, 'w') as f:
         writer = csv.DictWriter(f, fieldnames=OUTPUT_FIELDNAMES)
         writer.writeheader()
         writer.writerows(output)
+
+    
 
 
 def parse_format2(path):
@@ -83,11 +85,11 @@ def parse_format2(path):
 
         for row in zip(*columns):
             output.append({
-                'year': year,
-                'in_state_fips': str(row[2]),
-                'in_county_fips': str(row[3]),
-                'in_state': row[4],
-                'in_county': row[5],
+                'year2': year,
+                'year1_state_fips': str(row[2]),
+                'year1_county_fips': str(row[3]),
+                'year1_state': row[4],
+                'year1_county': row[5],
                 'returns': str(row[6]),
                 'exemptions': str(row[7]),
                 'agi': str(row[8])
@@ -109,11 +111,11 @@ def parse_format3(path):
         for row in reader:
             if row['y2_statefips'] == TEXAS_STATE_FIPS and row['y2_countyfips'] == SMITH_COUNTY_FIPS:
                 output.append({
-                    'year': year,
-                    'in_state_fips': int(row['y1_statefips']),
-                    'in_county_fips': int(row['y1_countyfips']),
-                    'in_state': row['y1_state'],
-                    'in_county': row['y1_countyname'],
+                    'year2': year,
+                    'year1_state_fips': int(row['y1_statefips']),
+                    'year1_county_fips': int(row['y1_countyfips']),
+                    'year1_state': row['y1_state'],
+                    'year1_county': row['y1_countyname'],
                     'returns': row['n1'],
                     'exemptions': row['n2'],
                     'agi': row['agi']
