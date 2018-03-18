@@ -2,6 +2,7 @@
 
 from glob import glob
 import os
+import re
 from zipfile import ZipFile
 
 from agate import csv
@@ -11,6 +12,7 @@ import xlrd
 TEXAS_STATE_FIPS = '48'
 SMITH_COUNTY_FIPS = '423'
 
+FORMAT1_DIR = 'data/format1'
 FORMAT2_DIR = 'data/format2'
 FORMAT3_DIR = 'data/format3'
 
@@ -35,12 +37,18 @@ COUNTY_NORMALIZATION = {
     'Smith County Tot Mig-Same St': 'Smith County Total Migration-Same State',
     'Smith County Tot Mig-US': 'Smith County Total Migration-US',
     'Smith County Tot Mig-US & F': 'Smith County Total Migration-US and Foreign',
-    'Smith County Tot Mig-US & For': 'Smith County Total Migration-US and Foreign'
+    'Smith County Tot Mig-US & For': 'Smith County Total Migration-US and Foreign',
+    'Other Flows - Diff State': 'Other flows - Different State',
+    'East Baton Rouge Par': 'East Baton Rouge Parish',
+    'San Bernardino Count': 'San Bernardino County'
 }
 
 
 def main():
     output = []
+
+    for path in sorted(glob('{}/*.zip'.format(FORMAT1_DIR))):
+        output.extend(parse_format1(path))
 
     for path in sorted(glob('{}/*.zip'.format(FORMAT2_DIR))):
         output.extend(parse_format2(path))
@@ -54,6 +62,65 @@ def main():
         writer = csv.DictWriter(f, fieldnames=OUTPUT_FIELDNAMES)
         writer.writeheader()
         writer.writerows(output)
+
+
+def parse_format1(path):
+    filename = os.path.basename(path)
+    
+    year1 = filename[0:4]
+    year2 = filename[6:10]
+
+    print('Parsing', year2)
+
+    output = []
+
+    archive = ZipFile(path, 'r')
+
+    filename_formats = [
+        '{}to{}CountyMigration/{}to{}CountyMigrationInflow/C{}{}Txi.xls'.format(
+            year1, year2, year1, year2, year1[-2:], year2[-2:]),
+        '{}to{}CountyMigration/{}to{}CountyMigrationInflow/co{}{}txi.xls'.format(
+            year1, year2, year1, year2, year1[-2:], year2[-1:]),
+        '{}to{}CountyMigration/{}to{}CountyMigrationInflow/co{}{}txir.xls'.format(
+            year1, year2, year1, year2, year1[-2:], year2[-1:]),
+        '{}to{}CountyMigration/{}to{}CountyMigrationInflow/co{}{}txi.xls'.format(
+            year1, year2, year1, year2, year1[-1:], year2[-2:]),
+        '{}to{}CountyMigration/{}to{}CountyMigrationInflow/co{}{}TXi.xls'.format(
+            year1, year2, year1, year2, year1[-2:], year2[-2:])
+    ]
+
+    archive_filename = None
+
+    for filename in filename_formats:
+        if filename in archive.namelist():
+            archive_filename = filename
+
+    with archive.open(archive_filename, 'r') as f:
+        book = xlrd.open_workbook(file_contents=f.read())
+
+        sheet = book.sheet_by_index(0)
+
+        columns = []
+
+        for i in range(sheet.ncols):
+            columns.append(sheet.col_values(i)[8:])
+
+        output = []
+
+        for row in zip(*columns):
+            if str(row[0]) == TEXAS_STATE_FIPS and str(row[1]) == SMITH_COUNTY_FIPS:
+                output.append({
+                    'year2': year2,
+                    'year1_state_fips': str(row[2]),
+                    'year1_county_fips': str(row[3]),
+                    'year1_state': row[4],
+                    'year1_county': COUNTY_NORMALIZATION.get(row[5], row[5]),
+                    'returns': str(row[6]),
+                    'exemptions': str(row[7]),
+                    'agi_thousands': str(row[8])
+                })
+
+    return output
 
 
 def parse_format2(path):
