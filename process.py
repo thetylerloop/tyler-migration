@@ -38,6 +38,7 @@ COUNTY_NORMALIZATION = {
     'Smith County Tot Mig-US': 'Smith County Total Migration-US',
     'Smith County Tot Mig-US & F': 'Smith County Total Migration-US and Foreign',
     'Smith County Tot Mig-US & For': 'Smith County Total Migration-US and Foreign',
+    'Smith County Non-migrants': 'Smith County Non-Migrants',
     'Other Flows - Diff State': 'Other flows - Different State',
     'East Baton Rouge Par': 'East Baton Rouge Parish',
     'San Bernardino Count': 'San Bernardino County'
@@ -161,7 +162,13 @@ def parse_format2(path):
         output = []
 
         for row in zip(*columns):
-            if str(row[0]) == TEXAS_STATE_FIPS and str(row[1]) == SMITH_COUNTY_FIPS:
+            try:
+                state_fips = str(int(row[0]))
+                county_fips = str(int(row[1]))
+            except ValueError:
+                continue
+
+            if state_fips == TEXAS_STATE_FIPS and county_fips == SMITH_COUNTY_FIPS:
                 output.append({
                     'year2': year,
                     'year1_state_fips': str(row[2]),
