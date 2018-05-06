@@ -9,8 +9,9 @@ from agate import csv
 import xlrd
 
 
-TEXAS_STATE_FIPS = '48'
-SMITH_COUNTY_FIPS = '423'
+STATE_FIPS = '48'
+COUNTY_FIPS = '423'
+COUNTY_NAME = 'Smith County'
 
 FORMAT1_DIR = 'data/format1'
 FORMAT2_DIR = 'data/format2'
@@ -29,16 +30,16 @@ OUTPUT_FIELDNAMES = [
 ]
 
 COUNTY_NORMALIZATION = {
-    'Smith County Tot Mig-Diff S': 'Smith County Total Migration-Different State',
-    'Smith County Tot Mig-Diff St': 'Smith County Total Migration-Different State',
-    'Smith County Tot Mig-Foreig': 'Smith County Total Migration-Foreign',
-    'Smith County Tot Mig-Foreign': 'Smith County Total Migration-Foreign',
-    'Smith County Tot Mig-Same S': 'Smith County Total Migration-Same State',
-    'Smith County Tot Mig-Same St': 'Smith County Total Migration-Same State',
-    'Smith County Tot Mig-US': 'Smith County Total Migration-US',
-    'Smith County Tot Mig-US & F': 'Smith County Total Migration-US and Foreign',
-    'Smith County Tot Mig-US & For': 'Smith County Total Migration-US and Foreign',
-    'Smith County Non-migrants': 'Smith County Non-Migrants',
+    f'{COUNTY_NAME} Tot Mig-Diff S': f'{COUNTY_NAME} Total Migration-Different State',
+    f'{COUNTY_NAME} Tot Mig-Diff St': f'{COUNTY_NAME} Total Migration-Different State',
+    f'{COUNTY_NAME} Tot Mig-Foreig': f'{COUNTY_NAME} Total Migration-Foreign',
+    f'{COUNTY_NAME} Tot Mig-Foreign': f'{COUNTY_NAME} Total Migration-Foreign',
+    f'{COUNTY_NAME} Tot Mig-Same S': f'{COUNTY_NAME} Total Migration-Same State',
+    f'{COUNTY_NAME} Tot Mig-Same St': f'{COUNTY_NAME} Total Migration-Same State',
+    f'{COUNTY_NAME} Tot Mig-US': f'{COUNTY_NAME} Total Migration-US',
+    f'{COUNTY_NAME} Tot Mig-US & F': f'{COUNTY_NAME} Total Migration-US and Foreign',
+    f'{COUNTY_NAME} Tot Mig-US & For': f'{COUNTY_NAME} Total Migration-US and Foreign',
+    f'{COUNTY_NAME} Non-migrants': f'{COUNTY_NAME} Non-Migrants',
     'Other Flows - Diff State': 'Other flows - Different State',
     'East Baton Rouge Par': 'East Baton Rouge Parish',
     'San Bernardino Count': 'San Bernardino County'
@@ -109,7 +110,7 @@ def parse_format1(path):
         output = []
 
         for row in zip(*columns):
-            if str(row[0]) == TEXAS_STATE_FIPS and str(row[1]) == SMITH_COUNTY_FIPS:
+            if str(row[0]) == STATE_FIPS and str(row[1]) == COUNTY_FIPS:
                 output.append({
                     'year2': year2,
                     'year1_state_fips': str(row[2]),
@@ -168,7 +169,7 @@ def parse_format2(path):
             except ValueError:
                 continue
 
-            if state_fips == TEXAS_STATE_FIPS and county_fips == SMITH_COUNTY_FIPS:
+            if state_fips == STATE_FIPS and county_fips == COUNTY_FIPS:
                 output.append({
                     'year2': year,
                     'year1_state_fips': str(row[2]),
@@ -194,7 +195,7 @@ def parse_format3(path):
         reader = csv.DictReader(f)
         
         for row in reader:
-            if row['y2_statefips'] == TEXAS_STATE_FIPS and row['y2_countyfips'] == SMITH_COUNTY_FIPS:
+            if row['y2_statefips'] == STATE_FIPS and row['y2_countyfips'] == COUNTY_FIPS:
                 output.append({
                     'year2': year,
                     'year1_state_fips': int(row['y1_statefips']),

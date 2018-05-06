@@ -3,15 +3,17 @@
 from collections import defaultdict
 import csv
 
+from process import COUNTY_NAME
+
 ALL_YEARS_PATH = 'output/all_years.csv'
 FIRST_YEAR = 1996
 LAST_YEAR = 2016
 
 LABELS = {
-    'Smith County Non-Migrants': 'non_migrant',
-    'Smith County Total Migration-Same State': 'in_state',
-    'Smith County Total Migration-Different State': 'out_of_state',
-    'Smith County Total Migration-Foreign': 'foreign'
+    f'{COUNTY_NAME} Non-Migrants': 'non_migrant',
+    f'{COUNTY_NAME} Total Migration-Same State': 'in_state',
+    f'{COUNTY_NAME} Total Migration-Different State': 'out_of_state',
+    f'{COUNTY_NAME} Total Migration-Foreign': 'foreign'
 }
 
 RATES_PATH = 'output/rates.csv'
